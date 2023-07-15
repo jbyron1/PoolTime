@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pools Schedule</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="PlayerAddition">
+        <label for="linkField">Start.gg User Link</label>
+        <input id="addPlayer" type="text" placeholder="https://www.start.gg/user/3750ee50"></input>
+        <button type="button" onclick="addUser()">Add Player</button>
+    </div>
+    <div id="TournamentSelection">
+    </div>
+    <div id="sharableLinkContainer">
+    <button type="button" id="submitButton" onclick="generateLink()">Generate Sharable Link</button>
+    <div id="shareableLink"></div>
+    </div>
+    <button type="button" id="playerCollapseBtn" onclick="togglePlayerList()">Open Player List</button>
+    <div id="playerList"></div>
+    <div id="main">
+
+    </div>
+	<script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+.PlayerAddition{
+    margin-left: 25%;
+    padding: 10px;
+    width: fit-content;
+    
+}
+
+.PlayerAddition > input{
+    width: 250px;
+}
+
+#TournamentSelection{
+    width: fit-content;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    
+    margin-left: 35%;
+}
+
+.tournament_selection{
+    flex-grow: 1;
+    width: 300px;
+    margin: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#playerList{
+    display: none;
+}
