@@ -26,6 +26,12 @@
     justify-content: flex-end;
 }
 
-#playerList{
+#shareableLinkContainer{
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+}
+
+#clipboardButton{
     display: none;
 }

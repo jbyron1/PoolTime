@@ -138,7 +138,7 @@ async function getPlayers(user_list, tournament_list){
 
 function addTournament(){
     t_list = []
-    tournaments = document.getElementsByClassName("tournament_selection")
+    var tournaments = document.getElementsByClassName("tournament_selection")
     for(t of tournaments){
         checkBox = t.getElementsByClassName("t_checkbox")[0]
         if(checkBox.checked){
@@ -242,8 +242,25 @@ async function generateLink(){
     result = await response.json()
     id = result['newID']
     var url = "https://pooltime.pages.dev/?saved=" + id
-    window.history.pushState({additionalInformation: "Updated to saved link"}, "Schedule app", url)
+    //window.history.pushState({additionalInformation: "Updated to saved link"}, "Schedule app", url)
+
+    linkText = document.getElementById('LinkText')
+    linkText.innerText = url
+
+    copyButton = document.getElementById("clipboardButton")
+    copyButton.style.display = 'inline'
 
 
 
+}
+
+async function copyLink(){
+    linkText = document.getElementById('LinkText')
+    url = linkText.innerText
+    const type = "text/plain";
+    const blob = new Blob([url], {type})
+    const data = [new ClipboardItem({[type] : blob})]
+    if(url != ''){
+        navigator.clipboard.write(data)
+    }
 }
