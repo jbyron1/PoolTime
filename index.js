@@ -257,10 +257,7 @@ async function generateLink(){
 async function copyLink(){
     linkText = document.getElementById('LinkText')
     url = linkText.innerText
-    const type = "text/plain";
-    const blob = new Blob([url], {type})
-    const data = [new ClipboardItem({[type] : blob})]
     if(url != ''){
-        navigator.clipboard.write(data)
+        navigator.clipboard.writeText(url)
     }
 }
