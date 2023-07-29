@@ -2,7 +2,33 @@ var users = new Set()
 var t_list = new Set()
 const api_url = 'https://pools.jdfgc.net'
 
+function getCookie(cname) {
+    let name = cname + "=";
+    let ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
 
+function setCookie(cname, cvalue, exdays) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    let expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+
+async function acceptDisclaimer(){
+    setCookie("accepted", "true", 14)
+    disclaimer = document.getElementById("disclaimerContainer")
+    disclaimer.style.display = "none"
+}
 
 
 
@@ -22,7 +48,7 @@ async function populateTournaments(){
     for(const tournament in tournaments){
         var name = tournaments[tournament].tournament_name
         var slug = tournaments[tournament].tournament_slug.split('/')[1]
-
+        t_list.add(slug)
         var tournament_div = document.createElement('div')
         tournament_div.className = "tournament_selection"
         tournament_div.id = slug
@@ -37,6 +63,7 @@ async function populateTournaments(){
         checkBox.name = slug + "_checkbox"
         checkBox.className = "t_checkbox"
         checkBox.onclick = addTournament
+        checkBox.checked = true;
         tournament_div.appendChild(checkBox)
 
         t_select = document.getElementById("TournamentSelection")
@@ -48,6 +75,11 @@ async function populateTournaments(){
 }
 
 async function initialize(){
+    disclaimerStatus = getCookie("accepted")
+    if(disclaimerStatus != "true"){
+        disclaimer = document.getElementById("disclaimerContainer")
+        disclaimer.style.display = "flex"
+    }
     const urlParams = new URL(window.location.href).searchParams
     const saved = urlParams.get('saved')
     const url_string = "?saved=" + saved
@@ -137,18 +169,30 @@ async function getPlayers(user_list, tournament_list){
 }
 
 function addTournament(){
-    t_list = []
+    t_list = new Set
     var tournaments = document.getElementsByClassName("tournament_selection")
     for(t of tournaments){
         checkBox = t.getElementsByClassName("t_checkbox")[0]
         if(checkBox.checked){
-            t_list.push(checkBox.value)
+            t_list.add(checkBox.value)
         }
     }
     updatePage()
 }
 
 async function updatePage(saved_data=null){
+
+    var old_waves = document.getElementsByClassName("wave")
+    while(old_waves[0]){
+        old_waves[0].parentNode.removeChild(old_waves[0])
+    }
+    sharable_link = document.getElementById('shareableLinkContainer')
+    sharable_link.style.display = 'none'
+    tagList = document.getElementById("playerList")
+    all_tags = document.getElementsByClassName("playerTag")
+    while(all_tags[0]){
+        all_tags[0].parentNode.removeChild(all_tags[0])
+    }
     var tags = new Set();
     var player_data
     if(saved_data){
@@ -160,22 +204,24 @@ async function updatePage(saved_data=null){
     wave_data = getWaves(player_data)
     console.log(wave_data)
     main_div = document.getElementById('main')
-    main_div.innerHTML = "";
     for(const [key, data] of Object.entries(await wave_data)){
         console.log(data)
+        wave_div = document.createElement('div')
+        wave_div.className = "wave"
         wave_name = document.createElement('h2')
         timestamp = data['start_time']
         datetime = new Date(timestamp * 1000)
+        now = new Date()
         days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', "Fri", "Sat"]
         day = days[datetime.getDay()]
         time = datetime.toLocaleString('en-US', {hour: 'numeric',minute:'numeric', hour12: true})
         wave_name.innerText = data.t_name + " Wave " + data.wave_id + " " + day + " " + time
-        main_div.appendChild(wave_name)
+        wave_div.appendChild(wave_name)
 
         for(const [game, info] of Object.entries(data['events'])){
             game_name = document.createElement("h3")
             game_name.innerText = info.event
-            main_div.appendChild(game_name)
+            wave_div.appendChild(game_name)
 
             for(const [player, pool_info] of Object.entries(info.players)){
                 console.log( pool_info)
@@ -196,38 +242,61 @@ async function updatePage(saved_data=null){
                 }
                 link = "https://start.gg/" + data.slug +"/event/" + game_link + "/brackets/" + phase + "/" + phaseGroup
                 player_data.innerHTML = pool_info.tag + " " + "<a href=" + link + ">" + station + "</a>"
-                main_div.appendChild(player_data)
+                wave_div.appendChild(player_data)
+                if(!(tags.has(pool_info.tag))){
+                    new_tag = document.createElement("div")
+                    new_tag.className = "playerTag"
+                    new_tag.innerText = pool_info.tag
+                    tagList.appendChild(new_tag)
+                }
                 tags.add(pool_info.tag)
             }
         }
-        
+        main_div.appendChild(wave_div)
     }
-    tagList = document.getElementById("playerList")
-    tagList.innerText=""
-    tag_text = ""
-    for(const tag of tags){
-        console.log(tag)
-        tag_text += tag + "\n"
-    }
-    tagList.innerText = tag_text
 
 }
 
 function togglePlayerList(){
     btn = document.getElementById('playerCollapseBtn')
+    t_btn = document.getElementById('tournamentCollapseBtn')
     playerListElement = document.getElementById("playerList")
-    if(btn.innerText.includes("Open")){
+    tListElement = document.getElementById("TournamentSelection")
+    if(btn.dataset.state == "disabled"){
         playerListElement.style.display = "block"
-        btn.innerText = "Close Player List"
+        btn.dataset.state = "enabled"
+        if(t_btn.dataset.state == "enabled"){
+            tListElement.style.display = "none"
+            t_btn.dataset.state = "disabled"
+        }
     }
     else{
         playerListElement.style.display = "none"
-        btn.innerText = "Open Player List"
+        btn.dataset.state = "disabled"
+    }
+}
+
+function toggleTournamentList(){
+    p_btn = document.getElementById('playerCollapseBtn')
+    btn = document.getElementById('tournamentCollapseBtn')
+    tListElement = document.getElementById("TournamentSelection")
+    playerListElement = document.getElementById("playerList")
+    if(btn.dataset.state == "disabled"){
+        tListElement.style.display = "block"
+        btn.dataset.state = "enabled"
+        if(p_btn.dataset.state == "enabled"){
+            playerListElement.style.display = "none"
+            p_btn.dataset.state = "disabled"
+        }
+    }
+    else{
+        tListElement.style.display = "none"
+        btn.dataset.state = "disabled"
     }
 }
 
 async function generateLink(){
-    data = {'users' : [...users], 'tournaments' : t_list, 'name' : "test"}
+    data = {'users' : [...users], 'tournaments' : [...t_list], 'name' : "test"}
     console.log(JSON.stringify(data))
     const response = await fetch(api_url, {
         method: "POST",
@@ -248,7 +317,10 @@ async function generateLink(){
     linkText.innerText = url
 
     copyButton = document.getElementById("clipboardButton")
-    copyButton.style.display = 'inline'
+    copyButton.style.display = 'block'
+
+    container = document.getElementById('shareableLinkContainer')
+    container.style.display = 'flex'
 
 
 
