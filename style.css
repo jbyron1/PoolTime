@@ -45,6 +45,14 @@ body {
     border: none;
 }
 
+#addPlayerCombo > button:hover{
+    background-color: lightgray;
+}
+
+.TabContainer > button[data-state="enabled"]{
+    background-color: #3c5692;
+}
+
 @media all and (min-width: 600px) {
     .TabContainer{
         background-color: #3663ca;
@@ -89,6 +97,10 @@ body {
     }
     
     
+}
+
+.TabContainer > button:hover{
+    background-color: #547ad3;
 }
 
 @media all and (max-width: 600px) {

@@ -211,7 +211,6 @@ async function updatePage(saved_data=null){
         wave_name = document.createElement('h2')
         timestamp = data['start_time']
         datetime = new Date(timestamp * 1000)
-        now = new Date()
         days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', "Fri", "Sat"]
         day = days[datetime.getDay()]
         time = datetime.toLocaleString('en-US', {hour: 'numeric',minute:'numeric', hour12: true})
