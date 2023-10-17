@@ -309,7 +309,7 @@ async function generateLink(){
     });
     result = await response.json()
     id = result['newID']
-    var url = "https://pooltime.pages.dev/?saved=" + id
+    var url = "https://pooltime.jdfgc.net/?saved=" + id
     //window.history.pushState({additionalInformation: "Updated to saved link"}, "Schedule app", url)
 
     linkText = document.getElementById('LinkText')
