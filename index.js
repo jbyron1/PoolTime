@@ -237,9 +237,11 @@ async function updatePage(saved_data=null){
                 //console.log(game_link)
                 if(game_link.slice(-1).search(/[A-Za-z0-9]/) == -1){
                     game_link = game_link.slice(0, -1)
-                    console.log(game_link)
+                    //console.log(game_link)
                 }
                 link = "https://start.gg/" + data.slug +"/event/" + game_link + "/brackets/" + phase + "/" + phaseGroup
+                link = "https://start.gg/" + pool_info.event_slug + "/brackets/" + phase + "/" + phaseGroup
+                console.log(link)
                 player_data.innerHTML = pool_info.tag + " " + "<a href=" + link + ">" + station + "</a>"
                 wave_div.appendChild(player_data)
                 if(!(tags.has(pool_info.tag))){
