@@ -1,6 +1,6 @@
 var users = new Set()
 var t_list = new Set()
-const api_url = 'https://pools.jdfgc.net'
+const api_url = 'http://65.109.232.109:3000/'
 
 function getCookie(cname) {
     let name = cname + "=";
@@ -33,10 +33,11 @@ async function acceptDisclaimer(){
 
 
 async function getTournaments(){
-    return await fetch(api_url + "?getTournaments=1")
+    return await fetch(api_url + "tournaments")
     .then(response => response.json())
     .then(json => {
         var tournament_names = json;
+        console.log(tournament_names)
         return tournament_names
     }) 
 }
@@ -44,7 +45,8 @@ async function getTournaments(){
 
 async function populateTournaments(){
     var tournaments = await getTournaments()
-    tournaments = tournaments.tournaments
+    //tournaments = tournaments.tournaments
+    console.log(tournaments)
     for(const tournament in tournaments){
         var name = tournaments[tournament].tournament_name
         var slug = tournaments[tournament].tournament_slug.split('/')[1]
@@ -74,6 +76,7 @@ async function populateTournaments(){
 
 }
 
+
 async function initialize(){
     disclaimerStatus = getCookie("accepted")
     if(disclaimerStatus != "true"){
@@ -83,14 +86,19 @@ async function initialize(){
     const urlParams = new URL(window.location.href).searchParams
     const saved = urlParams.get('saved')
     const url_string = "?saved=" + saved
+    player_data = []
     if(saved){
-        player_data = await fetch(api_url + url_string)
+        player_data = await fetch(api_url + "saved?id=eq." + saved)
         .then(response => response.json())
         .then(json => {
-            json['pools'].forEach(item=>{
+            console.log(json[0]['data'])
+            json[0]['data']['users'].forEach(users.add, users)
+            json[0]['data']['tournaments'].forEach(t_list.add, t_list)
+            /*
+            json[0]['data']['users'].forEach(item=>{
                 users.add(item.discriminator)
                 t_list.add(item.tournament_slug.split("/")[1])
-            })
+            })*/
             console.log(users)
             console.log(t_list)
         })
@@ -115,27 +123,39 @@ function addUser(){
 
 function getWaves(player_data){
     wave_data = []
+    //console.log("WAVE collation")
+    console.log(player_data)
     for(const player of player_data){
+        console.log(player)
         const wave_index = wave_data.findIndex(
-            (wave) => (wave.t_id === player.tournament_id) && (wave.wave_id === player.wave)
+            (wave) => (wave.t_id === player.phasegroups.tournament_id) && (wave.wave_id === player.phasegroups.wave)
         )
         if(wave_index === -1){
-            events = [{"event" : player.event_name, "players" : [player]}]
-            wave_data.push({"slug" : player.tournament_slug, "t_id" : player.tournament_id, "t_name": player.tournament_name, "wave_id" : player.wave, "start_time": player.start_time, "events" : events})
+            events = [{"event" : player.phasegroups.events.event_name, "players" : [player]}]
+            console.log(events)
+            //console.log([player])
+            //console.log(events)
+            wave_data.push({"slug" : player.phasegroups.tournament_slug, "t_id" : player.phasegroups.tournament_id, "t_name": player.phasegroups.tournament_name, "wave_id" : player.phasegroups.wave, "start_time": player.phasegroups.start_time, "events" : events})
         }
         else{
+            //console.log(player)
             event_index = wave_data[wave_index]['events'].findIndex(
-                (e) => e.event === player.event_name
+                (e) => e.event === player.phasegroups.events.event_name
             )
+            //console.log(event_index)
             if(event_index === -1){
-                wave_data[wave_index]['events'].push({"event" : player.event_name, "players" : [player]})
+                //console.log(wave_data[wave_index])
+                wave_data[wave_index]['events'].push({"event" : player.phasegroups.events.event_name, "players" : [player]})
+                //console.log(wave_data[wave_index])
             }
             else{
                 wave_data[wave_index]['events'][event_index].players.push(player)
+                
             }
         }
     }
     wave_data.sort((a,b) => (a.start_time > b.start_time ? 1 : -1))
+    
     return wave_data
 
 }
@@ -144,10 +164,14 @@ async function getPlayers(user_list, tournament_list){
     url_string = ""
     console.log(users)
     if(users.size!= 0){
-        url_string = "?users="
+        player_data = []
         for(const discriminator of users){
-            url_string = url_string + discriminator + ","
+            new_data = await fetch(api_url + "players?select=tag,phasegroups(*,events(*))&discriminator=eq." + discriminator).then(response => response.json())
+            player_data = player_data.concat(new_data)
+            console.log("new get players")
+            console.log(player_data)
         }
+        return player_data
         url_string = url_string.slice(0,-1) + "&tournaments="
     }
     else{
@@ -177,6 +201,7 @@ function addTournament(){
             t_list.add(checkBox.value)
         }
     }
+    console.log(t_list)
     updatePage()
 }
 
@@ -202,10 +227,15 @@ async function updatePage(saved_data=null){
         player_data = await getPlayers(users, t_list)
     }
     wave_data = getWaves(player_data)
-    console.log(wave_data)
+    //console.log(wave_data)
     main_div = document.getElementById('main')
     for(const [key, data] of Object.entries(await wave_data)){
-        console.log(data)
+        //console.log(data)
+        //console.log(t_list)
+        if(!t_list.has(data.slug.split("/")[1])){
+            //console.log(data.slug)  
+            continue
+        }
         wave_div = document.createElement('div')
         wave_div.className = "wave"
         wave_name = document.createElement('h2')
@@ -223,25 +253,14 @@ async function updatePage(saved_data=null){
             wave_div.appendChild(game_name)
 
             for(const [player, pool_info] of Object.entries(info.players)){
-                console.log( pool_info)
-                station = pool_info.display
-                phase = pool_info.phase_id
-                phaseGroup = pool_info.phasegroup_id
+                pool_info_pg = pool_info.phasegroups
+                //console.log( pool_info_pg)
+                station = pool_info_pg.display
+                phase = pool_info_pg.phase_id
+                phaseGroup = pool_info_pg.phasegroup_id
                 player_data = document.createElement("p")
-                game_link = info.event.replace(/[\(\).#!^]/g, "")
-                game_link = game_link.replace(/[:\[\]]/g, "-")
-                game_link = game_link.replace(/- /g, "-")
-                game_link = game_link.replace(/ /g, "-").toLowerCase()
-                //console.log(game_link)
-                game_link = game_link.replace(/--/g, "-")
-                //console.log(game_link)
-                if(game_link.slice(-1).search(/[A-Za-z0-9]/) == -1){
-                    game_link = game_link.slice(0, -1)
-                    //console.log(game_link)
-                }
-                link = "https://start.gg/" + data.slug +"/event/" + game_link + "/brackets/" + phase + "/" + phaseGroup
-                link = "https://start.gg/" + pool_info.event_slug + "/brackets/" + phase + "/" + phaseGroup
-                console.log(link)
+                link = "https://start.gg/" + pool_info_pg.events.event_slug + "/brackets/" + phase + "/" + phaseGroup
+                //console.log(link)
                 player_data.innerHTML = pool_info.tag + " " + "<a href=" + link + ">" + station + "</a>"
                 wave_div.appendChild(player_data)
                 if(!(tags.has(pool_info.tag))){
@@ -278,6 +297,7 @@ function togglePlayerList(){
 }
 
 function toggleTournamentList(){
+    console.log("yeah")
     p_btn = document.getElementById('playerCollapseBtn')
     btn = document.getElementById('tournamentCollapseBtn')
     tListElement = document.getElementById("TournamentSelection")
@@ -299,18 +319,17 @@ function toggleTournamentList(){
 async function generateLink(){
     data = {'users' : [...users], 'tournaments' : [...t_list], 'name' : "test"}
     console.log(JSON.stringify(data))
-    const response = await fetch(api_url, {
+    const response = await fetch(api_url + "saved?columns=data", {
         method: "POST",
-        mode : "cors",
-        cache : "no-cache",
         headers : {
             "Content-Type" : "application/json",
-            "Access-Control-Allow-Origin" : "*"
+            "Prefer" : "missing=default,return=representation",
         },
-        body : JSON.stringify(data)
+        body : JSON.stringify({"data": data})
     });
     result = await response.json()
-    id = result['newID']
+    console.log(result)
+    id = result[0]['id']
     var url = "https://pooltime.jdfgc.net/?saved=" + id
     //window.history.pushState({additionalInformation: "Updated to saved link"}, "Schedule app", url)
 
