@@ -1,6 +1,6 @@
 var users = new Set()
 var t_list = new Set()
-const api_url = 'http://65.109.232.109:3000/'
+const api_url = 'https://pooldata.jdfgc.net/'
 
 function getCookie(cname) {
     let name = cname + "=";
@@ -88,7 +88,7 @@ async function initialize(){
     const url_string = "?saved=" + saved
     player_data = []
     if(saved){
-        player_data = await fetch(api_url + "saved?id=eq." + saved)
+        player_data = await fetch(api_url + "saved?id=eq." + saved,{credentials : "omit", headers : {"Content-Type" : "application/json"}})
         .then(response => response.json())
         .then(json => {
             console.log(json[0]['data'])
@@ -165,12 +165,16 @@ async function getPlayers(user_list, tournament_list){
     console.log(users)
     if(users.size!= 0){
         player_data = []
+        discriminator_list = "{"
         for(const discriminator of users){
-            new_data = await fetch(api_url + "players?select=tag,phasegroups(*,events(*))&discriminator=eq." + discriminator).then(response => response.json())
-            player_data = player_data.concat(new_data)
-            console.log("new get players")
-            console.log(player_data)
+            discriminator_list += discriminator + ","
         }
+        discriminator_list = discriminator_list.slice(0,-1) + "}"
+        console.log(discriminator_list)
+        new_data = await fetch(api_url + "players?select=tag,phasegroups(*,events(*))&discriminator=like(any)." + discriminator_list).then(response => response.json())
+        .then(json => {
+            player_data = json
+        })
         return player_data
         url_string = url_string.slice(0,-1) + "&tournaments="
     }
