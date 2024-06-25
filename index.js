@@ -37,7 +37,7 @@ async function getTournaments(){
     .then(response => response.json())
     .then(json => {
         var tournament_names = json;
-        console.log(tournament_names)
+        //console.log(tournament_names)
         return tournament_names
     }) 
 }
@@ -46,7 +46,7 @@ async function getTournaments(){
 async function populateTournaments(){
     var tournaments = await getTournaments()
     //tournaments = tournaments.tournaments
-    console.log(tournaments)
+    //console.log(tournaments)
     for(const tournament in tournaments){
         var name = tournaments[tournament].tournament_name
         var slug = tournaments[tournament].tournament_slug.split('/')[1]
@@ -115,7 +115,6 @@ function addUser(){
     console.log(user)
     var index = user.indexOf("user") + 1
     users.add(user[index])
-    console.log(users)
     updatePage()
 }
 
@@ -124,15 +123,14 @@ function addUser(){
 function getWaves(player_data){
     wave_data = []
     //console.log("WAVE collation")
-    console.log(player_data)
+    //console.log(player_data)
     for(const player of player_data){
-        console.log(player)
         const wave_index = wave_data.findIndex(
             (wave) => (wave.t_id === player.phasegroups.tournament_id) && (wave.wave_id === player.phasegroups.wave)
         )
         if(wave_index === -1){
             events = [{"event" : player.phasegroups.events.event_name, "players" : [player]}]
-            console.log(events)
+            //console.log(events)
             //console.log([player])
             //console.log(events)
             wave_data.push({"slug" : player.phasegroups.tournament_slug, "t_id" : player.phasegroups.tournament_id, "t_name": player.phasegroups.tournament_name, "wave_id" : player.phasegroups.wave, "start_time": player.phasegroups.start_time, "events" : events})
@@ -162,7 +160,7 @@ function getWaves(player_data){
 
 async function getPlayers(user_list, tournament_list){
     url_string = ""
-    console.log(users)
+    //console.log(users)
     if(users.size!= 0){
         player_data = []
         discriminator_list = "{"
@@ -170,7 +168,6 @@ async function getPlayers(user_list, tournament_list){
             discriminator_list += discriminator + ","
         }
         discriminator_list = discriminator_list.slice(0,-1) + "}"
-        console.log(discriminator_list)
         new_data = await fetch(api_url + "players?select=tag,phasegroups(*,events(*))&discriminator=like(any)." + discriminator_list).then(response => response.json())
         .then(json => {
             player_data = json
@@ -186,7 +183,6 @@ async function getPlayers(user_list, tournament_list){
         url_string = url_string + slug + ','
     }
     url_string = url_string.slice(0,-1)
-    console.log(url_string)
     return await fetch(api_url + url_string)
     .then(response => response.json())
     .then(json => {
@@ -205,7 +201,7 @@ function addTournament(){
             t_list.add(checkBox.value)
         }
     }
-    console.log(t_list)
+    //console.log(t_list)
     updatePage()
 }
 
